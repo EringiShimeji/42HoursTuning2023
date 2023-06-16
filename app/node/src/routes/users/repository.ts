@@ -26,7 +26,7 @@ export const getUsers = async (
   limit: number,
   offset: number
 ): Promise<User[]> => {
-  const query = `SELECT user_id, user_name, office_id, user_icon_id FROM user ORDER BY entry_date ASC, kana ASC LIMIT ? OFFSET ? INNER JOIN office ON user.office_id = office.office_id INNER JOIN file ON user.user_icon_id = file.file_id`;
+  const query = `SELECT user_id, user_name, user_icon_id, office_name, file_name FROM user JOIN office ON user.office_id = office.office_id JOIN file ON user.user_icon_id = file.file_id ORDER BY entry_date ASC, kana ASC LIMIT ? OFFSET ?`;
   // const rows: RowDataPacket[] = [];
 
   const [userRows] = await pool.query<RowDataPacket[]>(query, [limit, offset]);
