@@ -11,6 +11,9 @@ import {
   insertMatchGroup,
 } from "./repository";
 import { getUserForFilter } from "../users/repository";
+import { RowDataPacket } from "mysql2";
+import pool from "../../util/mysql";
+import { convertToUserForFilter } from "../../model/utils";
 
 export const checkSkillsRegistered = async (
   skillNames: string[]
@@ -31,13 +34,134 @@ export const createMatchGroup = async (
   const owner = await getUserForFilter(matchGroupConfig.ownerId);
   let members: UserForFilter[] = [owner];
   const startTime = Date.now();
+  const [departmentId] = await pool.query<RowDataPacket[]>(
+    "SELECT department_id FROM department WHERE department_name = ?",
+    [owner.departmentName]
+  );
+  const [officeId] = await pool.query<RowDataPacket[]>(
+    "SELECT office_id FROM office WHERE office_name = ?",
+    [owner.officeName]
+  );
+  const [skillIds] = await pool.query<RowDataPacket[]>(
+    "SELECT skill_id FROM skill WHERE skill_name IN (?)",
+    [owner.skillNames]
+  );
+  let candidatesIds: RowDataPacket[] = [];
+  if (matchGroupConfig.departmentFilter === "onlyMyDepartment") {
+    [candidatesIds] = await pool.query<RowDataPacket[]>(
+      "SELECT user_id FROM department_role_member WHERE department_id = ?",
+      [departmentId[0].department_id]
+    );
+    console.log("onlyMyDepartment:", departmentId[0], candidatesIds);
+  }
+  if (matchGroupConfig.departmentFilter === "excludeMyDepartment") {
+    [candidatesIds] = await pool.query<RowDataPacket[]>(
+      "SELECT user_id FROM department_role_member WHERE department_id <> ?",
+      [departmentId[0].department_id]
+    );
+    console.log("excludeMyDepartment:", candidatesIds);
+  }
+  if (matchGroupConfig.officeFilter === "onlyMyOffice") {
+    if (candidatesIds.length === 0)
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM user WHERE office_id = ?",
+        [officeId[0].office_id]
+      );
+    else
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM user WHERE office_id = ? AND user_id IN (?)",
+        [officeId[0].office_id, candidatesIds]
+      );
+    console.log("onlyMyOffice:", candidatesIds);
+  }
+  if (matchGroupConfig.officeFilter === "excludeMyOffice") {
+    if (candidatesIds.length === 0)
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM user WHERE office_id <> ?",
+        [officeId[0].office_id]
+      );
+    else
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM user WHERE office_id <> ? AND user_id IN (?)",
+        [officeId[0].office_id, candidatesIds]
+      );
+    console.log("excludeMyOffice:", candidatesIds);
+  }
+  if (matchGroupConfig.skillFilter.length > 0) {
+    if (candidatesIds.length === 0)
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM skill_member WHERE skill_id IN (?)",
+        [skillIds]
+      );
+    else
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM skill_member WHERE skill_id IN (?) AND user_id IN (?)",
+        [skillIds, candidatesIds]
+      );
+    console.log("skillFilter:", candidatesIds);
+  }
+  if (matchGroupConfig.neverMatchedFilter) {
+    const [matchGroupIdRows] = await pool.query<RowDataPacket[]>(
+      "SELECT match_group_id FROM match_group_member WHERE user_id = ?",
+      [owner.userId]
+    );
+    if (candidatesIds.length === 0) {
+      if (matchGroupIdRows.length !== 0) {
+        [candidatesIds] = await pool.query<RowDataPacket[]>(
+          "SELECT user_id FROM match_group_member WHERE user_id <> ? AND match_group_id IN (?)",
+          [owner.userId, matchGroupIdRows]
+        );
+      }
+    } else {
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM match_group_member WHERE user_id <> ? AND match_group_id IN (?) AND user_id IN (?)",
+        [owner.userId, matchGroupIdRows, candidatesIds]
+      );
+    }
+    console.log("neverMatchedFilter:", candidatesIds);
+  }
+
+  let i = 0;
   while (members.length < matchGroupConfig.numOfMembers) {
     // デフォルトは50秒でタイムアウト
     if (Date.now() - startTime > (!timeout ? 50000 : timeout)) {
       console.error("not all members found before timeout");
       return;
     }
-    const candidate = await getUserForFilter();
+    let candidate: UserForFilter;
+    if (candidatesIds.length === 0 || candidatesIds.length >= i)
+      candidate = await getUserForFilter();
+    else {
+      const [userRows] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id, user_name, office_id, user_icon_id FROM user WHERE user_id = ?",
+        [candidatesIds[i++]]
+      );
+      const user = userRows[0];
+
+      const [officeNameRow] = await pool.query<RowDataPacket[]>(
+        `SELECT office_name FROM office WHERE office_id = ?`,
+        [user.office_id]
+      );
+      const [fileNameRow] = await pool.query<RowDataPacket[]>(
+        `SELECT file_name FROM file WHERE file_id = ?`,
+        [user.user_icon_id]
+      );
+      const [departmentNameRow] = await pool.query<RowDataPacket[]>(
+        `SELECT department_name FROM department WHERE department_id = (SELECT department_id FROM department_role_member WHERE user_id = ? AND belong = true)`,
+        [user.user_id]
+      );
+      const [skillNameRows] = await pool.query<RowDataPacket[]>(
+        `SELECT skill_name FROM skill WHERE skill_id IN (SELECT skill_id FROM skill_member WHERE user_id = ?)`,
+        [user.user_id]
+      );
+
+      user.office_name = officeNameRow[0].office_name;
+      user.file_name = fileNameRow[0].file_name;
+      user.department_name = departmentNameRow[0].department_name;
+      user.skill_names = skillNameRows.map((row) => row.skill_name);
+
+      candidate = convertToUserForFilter(user);
+    }
     console.log(new Date(), ": getUserForFilter");
     if (
       matchGroupConfig.departmentFilter !== "none" &&
