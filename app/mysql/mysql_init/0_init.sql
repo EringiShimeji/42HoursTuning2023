@@ -26,7 +26,6 @@ CREATE TABLE `department` (
     `department_name` VARCHAR(50) NOT NULL,
     `active` TINYINT(1) NOT NULL DEFAULT '1',
     PRIMARY KEY (`department_id`)
-    INDEX `department_id_idx` (`department_id`)
 );
 
 CREATE TABLE `role` (
@@ -43,7 +42,6 @@ CREATE TABLE `department_role_member` (
     `entry_date` DATE NOT NULL,
     `belong` TINYINT(1) NOT NULL DEFAULT '1',
     PRIMARY KEY (`department_id`, `role_id`, `user_id`, `entry_date`)
-    INDEX `user_id_idx` (`user_id`)
 );
 
 CREATE TABLE `office` (
