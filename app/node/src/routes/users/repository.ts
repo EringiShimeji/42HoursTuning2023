@@ -96,6 +96,7 @@ export const getUserByUserId = async (
 
 export const getUsersByUserIds = async (
   userIds: string[]
+  // doSort?: boolean
 ): Promise<SearchedUser[]> => {
   // let users: SearchedUser[] = [];
   // for (const userId of userIds) {

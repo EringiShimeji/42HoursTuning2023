@@ -61,32 +61,6 @@ export const createMatchGroup = async (
     );
     console.log("excludeMyDepartment:", candidatesIds);
   }
-  if (matchGroupConfig.officeFilter === "onlyMyOffice") {
-    if (candidatesIds.length === 0)
-      [candidatesIds] = await pool.query<RowDataPacket[]>(
-        "SELECT user_id FROM user WHERE office_id = ?",
-        [officeId[0].office_id]
-      );
-    else
-      [candidatesIds] = await pool.query<RowDataPacket[]>(
-        "SELECT user_id FROM user WHERE office_id = ? AND user_id IN (?)",
-        [officeId[0].office_id, candidatesIds]
-      );
-    console.log("onlyMyOffice:", candidatesIds);
-  }
-  if (matchGroupConfig.officeFilter === "excludeMyOffice") {
-    if (candidatesIds.length === 0)
-      [candidatesIds] = await pool.query<RowDataPacket[]>(
-        "SELECT user_id FROM user WHERE office_id <> ?",
-        [officeId[0].office_id]
-      );
-    else
-      [candidatesIds] = await pool.query<RowDataPacket[]>(
-        "SELECT user_id FROM user WHERE office_id <> ? AND user_id IN (?)",
-        [officeId[0].office_id, candidatesIds]
-      );
-    console.log("excludeMyOffice:", candidatesIds);
-  }
   if (matchGroupConfig.skillFilter.length > 0) {
     if (candidatesIds.length === 0)
       [candidatesIds] = await pool.query<RowDataPacket[]>(
@@ -119,6 +93,33 @@ export const createMatchGroup = async (
       );
     }
     console.log("neverMatchedFilter:", candidatesIds);
+  }
+
+  if (matchGroupConfig.officeFilter === "onlyMyOffice") {
+    if (candidatesIds.length === 0)
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM user WHERE office_id = ?",
+        [officeId[0].office_id]
+      );
+    else
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM user WHERE office_id = ? AND user_id IN (?)",
+        [officeId[0].office_id, candidatesIds]
+      );
+    console.log("onlyMyOffice:", candidatesIds);
+  }
+  if (matchGroupConfig.officeFilter === "excludeMyOffice") {
+    if (candidatesIds.length === 0)
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM user WHERE office_id <> ?",
+        [officeId[0].office_id]
+      );
+    else
+      [candidatesIds] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM user WHERE office_id <> ? AND user_id IN (?)",
+        [officeId[0].office_id, candidatesIds]
+      );
+    console.log("excludeMyOffice:", candidatesIds);
   }
 
   let i = 0;
