@@ -62,6 +62,7 @@ export const createMatchGroup = async (
     console.log("excludeMyDepartment:", candidatesIds);
   }
   if (matchGroupConfig.skillFilter.length > 0) {
+    console.log(skillIds);
     if (candidatesIds.length === 0)
       [candidatesIds] = await pool.query<RowDataPacket[]>(
         "SELECT user_id FROM skill_member WHERE skill_id IN (?)",
