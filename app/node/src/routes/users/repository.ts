@@ -260,16 +260,20 @@ export const getUsersByGoal = async (goal: string): Promise<SearchedUser[]> => {
   // return convertToSearchedUser(rows);
 };
 
-const _userIdsForFilterPromise = pool.query<RowDataPacket[]>(
-  "SELECT user_id FROM user"
-);
+let _userIdsForFilterPromise: RowDataPacket[] | null = null;
 
 export const getUserForFilter = async (
   userId?: string
 ): Promise<UserForFilter> => {
   let userRows: RowDataPacket[];
   if (!userId) {
-    const [userIds] = await _userIdsForFilterPromise;
+    if (_userIdsForFilterPromise === null) {
+      [_userIdsForFilterPromise] = await pool.query<RowDataPacket[]>(
+        "SELECT user_id FROM user"
+      );
+    }
+
+    const userIds = _userIdsForFilterPromise;
     const randUserId =
       userIds[Math.floor(Math.random() * Math.max(userIds.length - 1, 0))]
         .user_id;
