@@ -16,7 +16,7 @@ services:
     volumes:
       - ../images/user-icon:/node/images/user-icon
   backendsession1:
-    container_name: backendsession
+    container_name: backendsession1
     init: true
     build:
       context: ./node
@@ -24,7 +24,7 @@ services:
     volumes:
       - ../images/user-icon:/node/images/user-icon
   backendsession2:
-    container_name: backendsession
+    container_name: backendsession2
     init: true
     build:
       context: ./node
