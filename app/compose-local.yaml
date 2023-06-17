@@ -24,6 +24,15 @@ services:
     volumes:
       - ../images/user-icon:/node/images/user-icon
       - ./node/src:/node/src
+  backendcreategroup:
+    container_name: backendcreategroup
+    init: true
+    build:
+      context: ./node
+      dockerfile: Dockerfile.local
+    volumes:
+      - ../images/user-icon:/node/images/user-icon
+      - ./node/src:/node/src
   frontend:
     container_name: frontend
     build:
