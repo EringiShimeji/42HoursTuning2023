@@ -38,6 +38,7 @@ export const createMatchGroup = async (
       return;
     }
     const candidate = await getUserForFilter();
+    console.log(new Date(), ": getUserForFilter");
     if (
       matchGroupConfig.departmentFilter !== "none" &&
       !isPassedDepartmentFilter(
