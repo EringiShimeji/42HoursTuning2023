@@ -27,7 +27,8 @@ usersRouter.get(
         });
         console.warn("specified user icon not found");
         return;
-      }``
+      }
+      ``;
       const path = userIcon.path;
       // 500px x 500pxでリサイズ
       const data = execSync(`convert ${path} -resize 500x500! PNG:-`, {
@@ -154,13 +155,13 @@ usersRouter.get(
       });
 
       // 重複ユーザーを削除
-      let uniqueUsers: SearchedUser[] = [];
-      duplicateUsers.forEach((user) => {
-        if (
-          !uniqueUsers.some((uniqueUser) => uniqueUser.userId === user.userId)
-        ) {
-          uniqueUsers = uniqueUsers.concat(user);
+      let foundIds = new Set();
+      let uniqueUsers: SearchedUser[] = duplicateUsers.filter((user) => {
+        if (foundIds.has(user.userId)) {
+          return false;
         }
+        foundIds.add(user.userId);
+        return true;
       });
 
       // User型に変換
