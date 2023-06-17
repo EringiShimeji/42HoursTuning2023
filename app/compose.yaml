@@ -15,7 +15,15 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ../images/user-icon:/node/images/user-icon
-  backendsession:
+  backendsession1:
+    container_name: backendsession
+    init: true
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+    volumes:
+      - ../images/user-icon:/node/images/user-icon
+  backendsession2:
     container_name: backendsession
     init: true
     build:
