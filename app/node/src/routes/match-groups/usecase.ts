@@ -77,6 +77,7 @@ export const createMatchGroup = async (
       console.log(`${candidate.userId} is already added to members`);
       continue;
     }
+    console.log(new Date(), ": all filtered");
     members = members.concat(candidate);
     console.log(`${candidate.userId} is added to members`);
   }
@@ -117,7 +118,9 @@ const isPassedOfficeFilter = (
 
 const isPassedMatchFilter = async (ownerId: string, candidateId: string) => {
   const userIdsBeforeMatched = await getUserIdsBeforeMatched(ownerId);
-  return userIdsBeforeMatched.every(
+  const res = userIdsBeforeMatched.every(
     (userIdBeforeMatched) => userIdBeforeMatched !== candidateId
   );
+  console.log(new Date(), ": isPassedMatchFilter");
+  return res;
 };
