@@ -120,13 +120,15 @@ export const getUsersByUserIds = async (
 
   //   users = users.concat(convertToSearchedUser(userRows));
   // }
-  // return users;
-  const [userRows] = await pool.query<RowDataPacket[]>(
-    "SELECT user_id, user_name, kana, entry_date, office_name, user_icon_id, file_name FROM user JOIN office ON user.office_id = office.office_id JOIN file ON user.user_icon_id = file.file_id WHERE user_id in (?)",
-    [userIds]
-  );
-
-  return convertToSearchedUser(userRows);
+  // return users
+  if (userIds.length > 0) {
+    const [userRows] = await pool.query<RowDataPacket[]>(
+      "SELECT user_id, user_name, kana, entry_date, office_name, user_icon_id, file_name FROM user JOIN office ON user.office_id = office.office_id JOIN file ON user.user_icon_id = file.file_id WHERE user_id in (?)",
+      [userIds]
+    );
+    return convertToSearchedUser(userRows);
+  }
+  return [];
 };
 
 export const getUsersByUserName = async (

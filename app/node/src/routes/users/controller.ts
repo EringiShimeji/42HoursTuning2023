@@ -7,6 +7,7 @@ import { SearchedUser, Target, User } from "../../model/types";
 import { getUsersByKeyword } from "./usecase";
 
 export const usersRouter = express.Router();
+const imgData = new Map();
 
 // ユーザーアイコン画像取得API
 usersRouter.get(
@@ -31,9 +32,14 @@ usersRouter.get(
       ``;
       const path = userIcon.path;
       // 500px x 500pxでリサイズ
-      const data = execSync(`convert ${path} -resize 500x500! PNG:-`, {
-        shell: "/bin/bash",
-      });
+      let data = imgData.get(path);
+      if (!data) {
+        data = execSync(`convert ${path} -resize 500x500! PNG:-`, {
+          shell: "/bin/bash",
+        });
+        imgData.set(path, data);
+        setTimeout(() => imgData.delete(path), 10 * 1000);
+      }
       res.status(200).json({
         fileName: userIcon.fileName,
         data: data.toString("base64"),
