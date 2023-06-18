@@ -6,7 +6,7 @@ import {
 } from "../../model/types";
 import {
   getMatchGroupDetailByMatchGroupId,
-  // getUserIdsBeforeMatched,
+  getUserIdsBeforeMatched,
   hasSkillNameRecord,
   insertMatchGroup,
 } from "./repository";
@@ -221,12 +221,12 @@ export const createMatchGroup = async (
     ) {
       console.log(`${candidate.userId} is not passed skill filter`);
       continue;
-      // } else if (
-      //   matchGroupConfig.neverMatchedFilter &&
-      //   !(await isPassedMatchFilter(matchGroupConfig.ownerId, candidate.userId))
-      // ) {
-      //   console.log(`${candidate.userId} is not passed never matched filter`);
-      //   continue;
+    } else if (
+      matchGroupConfig.neverMatchedFilter &&
+      !(await isPassedMatchFilter(matchGroupConfig.ownerId, candidate.userId))
+    ) {
+      console.log(`${candidate.userId} is not passed never matched filter`);
+      continue;
     } else if (members.some((member) => member.userId === candidate.userId)) {
       console.log(`${candidate.userId} is already added to members`);
       continue;
@@ -269,10 +269,10 @@ const isPassedOfficeFilter = (
     : ownerOffice !== candidateOffice;
 };
 
-// const isPassedMatchFilter = async (ownerId: string, candidateId: string) => {
-//   const userIdsBeforeMatched = await getUserIdsBeforeMatched(ownerId);
-//   const res = userIdsBeforeMatched.every(
-//     (userIdBeforeMatched) => userIdBeforeMatched !== candidateId
-//   );
-//   return res;
-// };
+const isPassedMatchFilter = async (ownerId: string, candidateId: string) => {
+  const userIdsBeforeMatched = await getUserIdsBeforeMatched(ownerId);
+  const res = userIdsBeforeMatched.every(
+    (userIdBeforeMatched) => userIdBeforeMatched !== candidateId
+  );
+  return res;
+};
