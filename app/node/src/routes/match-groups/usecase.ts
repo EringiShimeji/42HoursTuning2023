@@ -46,8 +46,8 @@ export const createMatchGroup = async (
   let conditions = ["user.user_id <> ?"];
   let values: any = [owner.userId];
   if (matchGroupConfig.departmentFilter === "onlyMyDepartment") {
-    conditions.push("department_role_member.department_id = ?");
-    values.push(departmentId[0].department_id);
+    conditions.push("department_role_member.department_id IN (?)");
+    values.push(departmentId.map((row) => row.department_id));
     // [candidatesIds] = await pool.query<RowDataPacket[]>(
     //   "SELECT user_id FROM department_role_member WHERE department_id = ?",
     //   [departmentId[0].department_id]
@@ -55,8 +55,8 @@ export const createMatchGroup = async (
     // console.log("onlyMyDepartment:", departmentId[0], candidatesIds);
   }
   if (matchGroupConfig.departmentFilter === "excludeMyDepartment") {
-    conditions.push("department_role_member.department_id <> ?");
-    values.push(departmentId[0].department_id);
+    conditions.push("department_role_member.department_id NOT IN (?)");
+    values.push(departmentId.map((row) => row.department_id));
     // [candidatesIds] = await pool.query<RowDataPacket[]>(
     //   "SELECT user_id FROM department_role_member WHERE department_id <> ?",
     //   [departmentId[0].department_id]
@@ -64,8 +64,8 @@ export const createMatchGroup = async (
     // console.log("excludeMyDepartment:", candidatesIds);
   }
   if (matchGroupConfig.officeFilter === "onlyMyOffice") {
-    conditions.push("office_id = ?");
-    values.push(officeId[0].office_id);
+    conditions.push("office_id IN (?)");
+    values.push(officeId.map((row) => row.office_id));
     // if (candidatesIds.length === 0)
     //   [candidatesIds] = await pool.query<RowDataPacket[]>(
     //     "SELECT user_id FROM user WHERE office_id = ?",
@@ -79,8 +79,8 @@ export const createMatchGroup = async (
     // console.log("onlyMyOffice:", candidatesIds);
   }
   if (matchGroupConfig.officeFilter === "excludeMyOffice") {
-    conditions.push("office_id <> ?");
-    values.push(officeId[0].office_id);
+    conditions.push("office_id NOT IN (?)");
+    values.push(officeId.map((row) => row.office_id));
     // if (candidatesIds.length === 0)
     //   [candidatesIds] = await pool.query<RowDataPacket[]>(
     //     "SELECT user_id FROM user WHERE office_id <> ?",
