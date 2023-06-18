@@ -113,7 +113,7 @@ export const createMatchGroup = async (
   }
   if (matchGroupConfig.neverMatchedFilter) {
     conditions.push(
-      "user.match_group_id IN (SELECT match_group_id FROM match_group_member WHERE user_id = ?)"
+      "user.match_group_id IN (SELECT match_group_member.match_group_id FROM match_group_member WHERE match_group_member.user_id = ?)"
     );
     values.push(owner.userId);
     values.push(owner.userId);
