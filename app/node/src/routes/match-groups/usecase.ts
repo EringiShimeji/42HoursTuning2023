@@ -45,7 +45,6 @@ export const createMatchGroup = async (
   const q = `SELECT DISTINCT user.user_id FROM user INNER JOIN department_role_member ON user.user_id = department_role_member.user_id LEFT JOIN skill_member ON user.user_id = skill_member.user_id LEFT JOIN match_group_member ON user.user_id = match_group_member.user_id`;
   let conditions = ["user.user_id <> ?"];
   let values: any = [owner.userId];
-  const fitDepartmentId = [];
   if (matchGroupConfig.departmentFilter === "onlyMyDepartment") {
     conditions.push("department_id IN (?)");
     values.push(departmentId.map((row) => row.department_id));
