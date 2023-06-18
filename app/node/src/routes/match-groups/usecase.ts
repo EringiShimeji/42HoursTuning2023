@@ -142,106 +142,99 @@ export const createMatchGroup = async (
   //   }`,
   //   values
   // );
-  try {
-    await new Promise(async (resolve, reject) => {
-      const [candidatesIds] = await pool.query<RowDataPacket[]>(
-        `${q} WHERE ${conditions.join(" AND ")} LIMIT ${
-          matchGroupConfig.numOfMembers
-        }`,
-        values
+  const [candidatesIds] = await pool.query<RowDataPacket[]>(
+    `${q} WHERE ${conditions.join(" AND ")}`,
+    // `${q} WHERE ${conditions.join(" AND ")} LIMIT ${
+    //   matchGroupConfig.numOfMembers
+    // }`,
+    values
+  );
+  console.log(candidatesIds);
+
+  let i = 0;
+  while (members.length < matchGroupConfig.numOfMembers) {
+    // デフォルトは50秒でタイムアウト
+    if (Date.now() - startTime > (!timeout ? 50000 : timeout)) {
+      console.error("not all members found before timeout");
+      return;
+    }
+    let candidate: UserForFilter;
+    if (candidatesIds.length === 0 || i >= candidatesIds.length)
+      candidate = await getUserForFilter();
+    else {
+      const [userRows] = await pool.query<RowDataPacket[]>(
+        `SELECT user_id, user_name, office_id, user_icon_id FROM user WHERE user_id = '${
+          candidatesIds[i++].user_id
+        }'`
       );
-      console.log(candidatesIds);
+      const user = userRows[0];
 
-      let i = 0;
-      while (members.length < matchGroupConfig.numOfMembers) {
-        // デフォルトは50秒でタイムアウト
-        if (Date.now() - startTime > (!timeout ? 50000 : timeout)) {
-          console.error("not all members found before timeout");
-          reject();
-        }
-        let candidate: UserForFilter;
-        if (candidatesIds.length === 0 || i >= candidatesIds.length)
-          candidate = await getUserForFilter();
-        else {
-          const [userRows] = await pool.query<RowDataPacket[]>(
-            `SELECT user_id, user_name, office_id, user_icon_id FROM user WHERE user_id = '${
-              candidatesIds[i++].user_id
-            }'`
-          );
-          const user = userRows[0];
+      const [officeNameRow] = await pool.query<RowDataPacket[]>(
+        `SELECT office_name FROM office WHERE office_id = ?`,
+        [user.office_id]
+      );
+      const [fileNameRow] = await pool.query<RowDataPacket[]>(
+        `SELECT file_name FROM file WHERE file_id = ?`,
+        [user.user_icon_id]
+      );
+      const [departmentNameRow] = await pool.query<RowDataPacket[]>(
+        `SELECT department_name FROM department WHERE department_id = (SELECT department_id FROM department_role_member WHERE user_id = ? AND belong = true)`,
+        [user.user_id]
+      );
+      const [skillNameRows] = await pool.query<RowDataPacket[]>(
+        `SELECT skill_name FROM skill WHERE skill_id IN (SELECT skill_id FROM skill_member WHERE user_id = ?)`,
+        [user.user_id]
+      );
 
-          const [officeNameRow] = await pool.query<RowDataPacket[]>(
-            `SELECT office_name FROM office WHERE office_id = ?`,
-            [user.office_id]
-          );
-          const [fileNameRow] = await pool.query<RowDataPacket[]>(
-            `SELECT file_name FROM file WHERE file_id = ?`,
-            [user.user_icon_id]
-          );
-          const [departmentNameRow] = await pool.query<RowDataPacket[]>(
-            `SELECT department_name FROM department WHERE department_id = (SELECT department_id FROM department_role_member WHERE user_id = ? AND belong = true)`,
-            [user.user_id]
-          );
-          const [skillNameRows] = await pool.query<RowDataPacket[]>(
-            `SELECT skill_name FROM skill WHERE skill_id IN (SELECT skill_id FROM skill_member WHERE user_id = ?)`,
-            [user.user_id]
-          );
+      user.office_name = officeNameRow[0].office_name;
+      user.file_name = fileNameRow[0].file_name;
+      user.department_name = departmentNameRow[0].department_name;
+      user.skill_names = skillNameRows.map((row) => row.skill_name);
 
-          user.office_name = officeNameRow[0].office_name;
-          user.file_name = fileNameRow[0].file_name;
-          user.department_name = departmentNameRow[0].department_name;
-          user.skill_names = skillNameRows.map((row) => row.skill_name);
-
-          candidate = convertToUserForFilter(user);
-        }
-        if (
-          matchGroupConfig.departmentFilter !== "none" &&
-          !isPassedDepartmentFilter(
-            matchGroupConfig.departmentFilter,
-            owner.departmentName,
-            candidate.departmentName
-          )
-        ) {
-          console.log(`${candidate.userId} is not passed department filter`);
-          continue;
-        } else if (
-          matchGroupConfig.officeFilter !== "none" &&
-          !isPassedOfficeFilter(
-            matchGroupConfig.officeFilter,
-            owner.officeName,
-            candidate.officeName
-          )
-        ) {
-          console.log(`${candidate.userId} is not passed office filter`);
-          continue;
-        } else if (
-          matchGroupConfig.skillFilter.length > 0 &&
-          !matchGroupConfig.skillFilter.some((skill) =>
-            candidate.skillNames.includes(skill)
-          )
-        ) {
-          console.log(`${candidate.userId} is not passed skill filter`);
-          continue;
-          // } else if (
-          //   matchGroupConfig.neverMatchedFilter &&
-          //   !(await isPassedMatchFilter(matchGroupConfig.ownerId, candidate.userId))
-          // ) {
-          //   console.log(`${candidate.userId} is not passed never matched filter`);
-          //   continue;
-        } else if (
-          members.some((member) => member.userId === candidate.userId)
-        ) {
-          console.log(`${candidate.userId} is already added to members`);
-          continue;
-        }
-        members = members.concat(candidate);
-        console.log(`${candidate.userId} is added to members`);
-      }
-      resolve(null);
-    });
-  } catch (error) {
-    return;
+      candidate = convertToUserForFilter(user);
+    }
+    if (
+      matchGroupConfig.departmentFilter !== "none" &&
+      !isPassedDepartmentFilter(
+        matchGroupConfig.departmentFilter,
+        owner.departmentName,
+        candidate.departmentName
+      )
+    ) {
+      console.log(`${candidate.userId} is not passed department filter`);
+      continue;
+    } else if (
+      matchGroupConfig.officeFilter !== "none" &&
+      !isPassedOfficeFilter(
+        matchGroupConfig.officeFilter,
+        owner.officeName,
+        candidate.officeName
+      )
+    ) {
+      console.log(`${candidate.userId} is not passed office filter`);
+      continue;
+    } else if (
+      matchGroupConfig.skillFilter.length > 0 &&
+      !matchGroupConfig.skillFilter.some((skill) =>
+        candidate.skillNames.includes(skill)
+      )
+    ) {
+      console.log(`${candidate.userId} is not passed skill filter`);
+      continue;
+      // } else if (
+      //   matchGroupConfig.neverMatchedFilter &&
+      //   !(await isPassedMatchFilter(matchGroupConfig.ownerId, candidate.userId))
+      // ) {
+      //   console.log(`${candidate.userId} is not passed never matched filter`);
+      //   continue;
+    } else if (members.some((member) => member.userId === candidate.userId)) {
+      console.log(`${candidate.userId} is already added to members`);
+      continue;
+    }
+    members = members.concat(candidate);
+    console.log(`${candidate.userId} is added to members`);
   }
+
   const matchGroupId = uuidv4();
   await insertMatchGroup({
     matchGroupId,
