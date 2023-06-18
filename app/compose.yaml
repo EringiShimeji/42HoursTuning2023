@@ -39,6 +39,22 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ../images/user-icon:/node/images/user-icon
+  backendsession4:
+    container_name: backendsession4
+    init: true
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+    volumes:
+      - ../images/user-icon:/node/images/user-icon
+  backendsession5:
+    container_name: backendsession5
+    init: true
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+    volumes:
+      - ../images/user-icon:/node/images/user-icon
   frontend:
     container_name: frontend
     build:
