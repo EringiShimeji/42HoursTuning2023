@@ -278,7 +278,6 @@ export const getUserForFilter = async (
     const randUserId =
       userIds[Math.floor(Math.random() * Math.max(userIds.length - 1, 0))]
         .user_id;
-    console.log("randUserId:", randUserId);
     [userRows] = await pool.query<RowDataPacket[]>(
       "SELECT user_id, user_name, office_id, user_icon_id FROM user WHERE user_id = ?",
       [randUserId]

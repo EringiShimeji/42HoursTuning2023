@@ -6,7 +6,7 @@ import {
 } from "../../model/types";
 import {
   getMatchGroupDetailByMatchGroupId,
-  getUserIdsBeforeMatched,
+  // getUserIdsBeforeMatched,
   hasSkillNameRecord,
   insertMatchGroup,
 } from "./repository";
@@ -42,7 +42,7 @@ export const createMatchGroup = async (
     "SELECT office_id FROM office WHERE office_name = ?",
     [owner.officeName]
   );
-  const q = `SELECT DISTINCT user.user_id FROM user JOIN department_role_member ON user.user_id = department_role_member.user_id JOIN skill_member ON user.user_id = skill_member.user_id LEFT JOIN match_group_member ON user.user_id = match_group_member.user_id`;
+  const q = `SELECT DISTINCT user.user_id FROM user INNER JOIN department_role_member ON user.user_id = department_role_member.user_id LEFT JOIN skill_member ON user.user_id = skill_member.user_id LEFT JOIN match_group_member ON user.user_id = match_group_member.user_id`;
   let conditions = ["user.user_id <> ?"];
   let values: any = [owner.userId];
   if (matchGroupConfig.departmentFilter === "onlyMyDepartment") {
@@ -148,12 +148,6 @@ export const createMatchGroup = async (
     }`,
     values
   );
-  console.log(
-    `${q} WHERE ${conditions.join(" AND ")} LIMIT ${
-      matchGroupConfig.numOfMembers
-    }`,
-    values
-  );
   console.log(candidatesIds);
 
   let i = 0;
@@ -198,8 +192,6 @@ export const createMatchGroup = async (
 
       candidate = convertToUserForFilter(user);
     }
-    console.log(new Date(), ": getUserForFilter");
-    console.log(owner, candidate);
     if (
       matchGroupConfig.departmentFilter !== "none" &&
       !isPassedDepartmentFilter(
@@ -209,7 +201,6 @@ export const createMatchGroup = async (
       )
     ) {
       console.log(`${candidate.userId} is not passed department filter`);
-      console.log(`${candidate.departmentName} ${owner.departmentName}`);
       continue;
     } else if (
       matchGroupConfig.officeFilter !== "none" &&
@@ -229,17 +220,16 @@ export const createMatchGroup = async (
     ) {
       console.log(`${candidate.userId} is not passed skill filter`);
       continue;
-    } else if (
-      matchGroupConfig.neverMatchedFilter &&
-      !(await isPassedMatchFilter(matchGroupConfig.ownerId, candidate.userId))
-    ) {
-      console.log(`${candidate.userId} is not passed never matched filter`);
-      continue;
+      // } else if (
+      //   matchGroupConfig.neverMatchedFilter &&
+      //   !(await isPassedMatchFilter(matchGroupConfig.ownerId, candidate.userId))
+      // ) {
+      //   console.log(`${candidate.userId} is not passed never matched filter`);
+      //   continue;
     } else if (members.some((member) => member.userId === candidate.userId)) {
       console.log(`${candidate.userId} is already added to members`);
       continue;
     }
-    console.log(new Date(), ": all filtered");
     members = members.concat(candidate);
     console.log(`${candidate.userId} is added to members`);
   }
@@ -278,11 +268,10 @@ const isPassedOfficeFilter = (
     : ownerOffice !== candidateOffice;
 };
 
-const isPassedMatchFilter = async (ownerId: string, candidateId: string) => {
-  const userIdsBeforeMatched = await getUserIdsBeforeMatched(ownerId);
-  const res = userIdsBeforeMatched.every(
-    (userIdBeforeMatched) => userIdBeforeMatched !== candidateId
-  );
-  console.log(new Date(), ": isPassedMatchFilter");
-  return res;
-};
+// const isPassedMatchFilter = async (ownerId: string, candidateId: string) => {
+//   const userIdsBeforeMatched = await getUserIdsBeforeMatched(ownerId);
+//   const res = userIdsBeforeMatched.every(
+//     (userIdBeforeMatched) => userIdBeforeMatched !== candidateId
+//   );
+//   return res;
+// };

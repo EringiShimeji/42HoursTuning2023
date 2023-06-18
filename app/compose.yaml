@@ -32,7 +32,7 @@ services:
     volumes:
       - ../images/user-icon:/node/images/user-icon
   backendsession3:
-    container_name: backendsession2
+    container_name: backendsession3
     init: true
     build:
       context: ./node

@@ -15,15 +15,6 @@ services:
     volumes:
       - ../images/user-icon:/node/images/user-icon
       - ./node/src:/node/src
-  backendsearch:
-    container_name: backendsearch
-    init: true
-    build:
-      context: ./node
-      dockerfile: Dockerfile.local
-    volumes:
-      - ../images/user-icon:/node/images/user-icon
-      - ./node/src:/node/src
   backendsession1:
     container_name: backendsession1
     init: true
